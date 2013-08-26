@@ -24,6 +24,12 @@ class NewsblurClient:
         assert(d['authenticated'])
         return d
 
+    def river(self, feeds):
+        url = self.api_root + '/reader/river_stories'
+        payload = {'feeds': feeds}
+        r = self.session.get(url, data=payload)
+        return r.json()
+
 
 class MockClient:
     """
@@ -45,6 +51,10 @@ class MockClient:
                            },
                        }
              }
+        return d
+
+    def river(self, feeds):
+        d = {}
         return d
 
 
@@ -91,9 +101,12 @@ def main():
         c = NewsblurClient('http://api.newsblur.com')
         c.login(username, password)
     d = c.feeds()
+    feeds_unread = [k for k, v in d['feeds'].items() if v['nt'] > 0]
+    river = c.river(feeds_unread)
     if args.debug:
         from pprint import pprint
         pprint(d)
+        pprint(river)
     win = WhatsupWindow(c)
     win.connect("delete-event", Gtk.main_quit)
     win.show_all()
