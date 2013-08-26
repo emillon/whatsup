@@ -37,6 +37,12 @@ class MockClient:
                        2: {'feed_title': 'Feed 2',
                            'nt': 1,
                            },
+                       3: {'feed_title': 'Feed 3',
+                           'nt': 0,
+                           },
+                       4: {'feed_title': 'Feed 4',
+                           'nt': 2,
+                           },
                        }
              }
         return d
@@ -48,15 +54,22 @@ class WhatsupWindow(Gtk.Window):
         super().__init__()
         self.client = client
 
-        store = Gtk.ListStore(str)
+        store = Gtk.ListStore(str, int)
         d = client.feeds()
-        for _, f in d['feeds'].items():
-            row = [f['feed_title']]
+
+        total_unread = sum([f['nt'] for f in d['feeds'].values()])
+        store.append(['All', total_unread])
+        for f in d['feeds'].values():
+            title = f['feed_title']
+            unread = f['nt']
+            row = [title, unread]
             store.append(row)
 
         view = Gtk.TreeView(store)
         renderer = Gtk.CellRendererText()
         column = Gtk.TreeViewColumn("Feed", renderer, text=0)
+        view.append_column(column)
+        column = Gtk.TreeViewColumn("Unread", renderer, text=1)
         view.append_column(column)
 
         self.add(view)
