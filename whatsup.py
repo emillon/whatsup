@@ -17,8 +17,6 @@ class NewsblurClient:
     def feeds(self):
         url = self.api_root + '/reader/feeds'
         r = self.session.get(url)
-        print(r.request.headers)
-        print(r.headers)
         d = r.json()
         assert(d['authenticated'])
         return d
@@ -29,7 +27,12 @@ def main():
     username, _, password = n.authenticators('newsblur.com')
     c = NewsblurClient('http://api.newsblur.com')
     c.login(username, password)
-    print(c.feeds())
+    d = c.feeds()
+    for f, fd in d['feeds'].items():
+        nt = fd['nt']
+        title = fd['feed_title']
+        if nt > 0:
+            print('%3d - %s' % (nt, title))
 
 
 if __name__ == '__main__':
