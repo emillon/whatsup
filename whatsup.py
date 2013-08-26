@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 
+import argparse
 import requests
 import netrc
 
@@ -22,11 +23,28 @@ class NewsblurClient:
         return d
 
 
+class MockClient:
+    """
+    A client that is compatible with NewsblurClient, but
+    does not connect to the Internet.
+    """
+    def feeds(self):
+        return {'feeds': {}}
+
+
 def main():
-    n = netrc.netrc()
-    username, _, password = n.authenticators('newsblur.com')
-    c = NewsblurClient('http://api.newsblur.com')
-    c.login(username, password)
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--no-connect',
+                        help="Don't actually connect to the API",
+                        action='store_true')
+    args = parser.parse_args()
+
+    c = MockClient()
+    if not args.no_connect:
+        n = netrc.netrc()
+        username, _, password = n.authenticators('newsblur.com')
+        c = NewsblurClient('http://api.newsblur.com')
+        c.login(username, password)
     d = c.feeds()
     for f, fd in d['feeds'].items():
         nt = fd['nt']
