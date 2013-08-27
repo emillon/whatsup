@@ -109,6 +109,8 @@ class FeedListWidget(Gtk.ScrolledWindow):
         for k, f in feeds.items():
             title = f['feed_title']
             unread = f['nt']
+            if unread == 0:
+                continue
             row = [k, title, unread]
             store.append(row)
 
