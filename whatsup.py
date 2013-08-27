@@ -30,6 +30,9 @@ class NewsblurClient:
         r = self.session.get(url, data=payload)
         return r.json()
 
+    def stories(self, feed):
+        return self.river([feed])
+
 
 class MockClient:
     """
@@ -66,8 +69,14 @@ class MockClient:
                 }
 
     def river(self, feeds):
-        d = {}
-        return d
+        stories = [s
+                   for k, v in self._feeds.items()
+                   if k in feeds
+                   for s in v['stories']]
+        return {'stories': [stories]}
+
+    def stories(self, feed):
+        return self.river([feed])
 
 
 class FeedListWidget(Gtk.ScrolledWindow):
