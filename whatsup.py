@@ -82,7 +82,10 @@ class WhatsupWindow(Gtk.Window):
         column = Gtk.TreeViewColumn("Unread", renderer, text=1)
         view.append_column(column)
 
-        self.add(view)
+        scroll = Gtk.ScrolledWindow()
+        scroll.add(view)
+
+        self.add(scroll)
 
 
 def main():
