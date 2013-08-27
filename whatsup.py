@@ -1,6 +1,8 @@
 #!/usr/bin/python3
 
 import argparse
+import httpretty
+import json
 import requests
 import netrc
 
@@ -46,13 +48,19 @@ class NewsblurClient:
         return {'stories': l}
 
 
-class MockClient:
+class MockServer:
     """
     A client that is compatible with NewsblurClient, but
     does not connect to the Internet.
     """
 
-    def __init__(self):
+    def __init__(self, api_root):
+        self.api_root = api_root
+        self._routes = [(httpretty.POST, '/api/login', self.post_login),
+                        (httpretty.GET, '/reader/feeds', self.get_feeds),
+                        (httpretty.GET, '/reader/river_stories',
+                            self.get_river),
+                        ]
         self._feeds = {'1': {'feed_title': 'Feed 1',
                              'stories': [{'story_title': 'Feed 1 S1'},
                                          {'story_title': 'Feed 1 S2'},
@@ -72,32 +80,38 @@ class MockClient:
                              },
                        }
 
-    def feeds(self):
-        return {'feeds': {k: {'feed_title': v['feed_title'],
-                              'nt': len(v['stories'])
-                              }
-                          for k, v in self._feeds.items()
-                          }
-                }
+    def post_login(self, meth, uri, headers):
+        return (200, headers, '')
 
-    def river(self, feeds):
-        stories = [s
+    def get_feeds(self, meth, uri, headers):
+        r = {'authenticated': True,
+             'feeds': {k: {'feed_title': v['feed_title'],
+                           'nt': len(v['stories'])
+                           }
+                       for k, v in self._feeds.items()
+                       }
+             }
+        return (200, headers, json.dumps(r))
+
+    def get_river(self, meth, uri, headers):
+        def with_story_id(s, k):
+            r = s.copy()
+            r['story_feed_id'] = k
+            return r
+        stories = [with_story_id(s, k)
                    for k, v in self._feeds.items()
-                   if k in feeds
                    for s in v['stories']]
-        return {'stories': stories}
+        # FIXME 'feeds' query string parameter is ignored
+        r = {'stories': stories}
+        return (200, headers, json.dumps(r))
 
-    def cache_river(self, feeds):
-        pass
+    def enable(self):
+        httpretty.enable()
+        for meth, route, cb in self._routes:
+            httpretty.register_uri(meth, self.api_root + route, cb)
 
-    def all_stories(self):
-        stories = [s
-                   for k, v in self._feeds.items()
-                   for s in v['stories']]
-        return {'stories': stories}
-
-    def stories(self, feed):
-        return self.river([feed])
+    def disable(self):
+        httpretty.disable()
 
 
 class FeedListWidget(Gtk.ScrolledWindow):
@@ -179,12 +193,15 @@ def main():
                         action='store_true')
     args = parser.parse_args()
 
-    c = MockClient()
-    if not args.no_connect:
-        n = netrc.netrc()
-        username, _, password = n.authenticators('newsblur.com')
-        c = NewsblurClient('http://api.newsblur.com')
-        c.login(username, password)
+    api_root = 'http://api.newsblur.com'
+    if args.no_connect:
+        s = MockServer(api_root)
+        s.enable()
+
+    n = netrc.netrc()
+    username, _, password = n.authenticators('newsblur.com')
+    c = NewsblurClient(api_root)
+    c.login(username, password)
     d = c.feeds()
     feeds_unread = [k for k, v in d['feeds'].items() if v['nt'] > 0]
     river = c.cache_river(feeds_unread)
@@ -196,6 +213,8 @@ def main():
     win.connect("delete-event", Gtk.main_quit)
     win.show_all()
     Gtk.main()
+    if args.no_connect:
+        s.disable()
 
 
 if __name__ == '__main__':
