@@ -158,7 +158,7 @@ class WhatsupWindow(Gtk.Window):
 
         d = client.feeds()
         wfeeds = FeedListWidget(d['feeds'])
-        box.pack_start(wfeeds, False, True, 0)
+        box.pack_start(wfeeds, True, True, 0)
         wstories = StoriesListWidget(client)
         box.pack_start(wstories, True, True, 0)
 
