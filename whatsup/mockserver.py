@@ -43,11 +43,12 @@ class MockServer:
         return (200, headers, json.dumps(r))
 
     def get_river(self, meth, uri, headers):
-        def with_story_id(s, k):
+        def fix_story(s, k):
             r = s.copy()
             r['story_feed_id'] = k
+            r['story_content'] = 'Content of ' + r['story_title']
             return r
-        stories = [with_story_id(s, k)
+        stories = [fix_story(s, k)
                    for k, v in self._feeds.items()
                    for s in v['stories']]
         # FIXME 'feeds' query string parameter is ignored

@@ -28,7 +28,7 @@ class FeedListWidget(Gtk.ScrolledWindow):
 
 class StoriesListWidget(Gtk.TreeView):
     def __init__(self, client):
-        store = Gtk.ListStore(str)
+        store = Gtk.ListStore(str, str)
         super().__init__(store)
         self.store = store
         self.client = client
@@ -47,19 +47,21 @@ class StoriesListWidget(Gtk.TreeView):
             stories = self.client.stories(feed_id)
         self.store.clear()
         for story in stories['stories']:
-            text = story['story_title']
-            self.store.append([text])
+            title = story['story_title']
+            content = story['story_content']
+            self.store.append([title, content])
 
 
 class StoryContentWidget(Gtk.TextView):
     def on_story_select_changed(self, selection):
         model, treeiter = selection.get_selected()
-        if treeiter is None:
-            return
-        row = model[treeiter]
-        text = 'Content for ' + row[0]
         buf = self.get_buffer()
-        buf.set_text(text)
+        if treeiter is None:
+            buf.set_text('')
+        else:
+            row = model[treeiter]
+            text = row[1]
+            buf.set_text(text)
 
 
 class WhatsupWindow(Gtk.Window):
