@@ -73,7 +73,7 @@ class MockClient:
                    for k, v in self._feeds.items()
                    if k in feeds
                    for s in v['stories']]
-        return {'stories': [stories]}
+        return {'stories': stories}
 
     def stories(self, feed):
         return self.river([feed])
@@ -82,20 +82,20 @@ class MockClient:
 class FeedListWidget(Gtk.ScrolledWindow):
     def __init__(self, feeds):
         super().__init__()
-        store = Gtk.ListStore(str, int)
+        store = Gtk.ListStore(int, str, int)
         total_unread = sum([f['nt'] for f in feeds.values()])
-        store.append(['All', total_unread])
-        for f in feeds.values():
+        store.append([-1, 'All', total_unread])
+        for k, f in feeds.items():
             title = f['feed_title']
             unread = f['nt']
-            row = [title, unread]
+            row = [k, title, unread]
             store.append(row)
 
         view = Gtk.TreeView(store)
         renderer = Gtk.CellRendererText()
-        column = Gtk.TreeViewColumn("Feed", renderer, text=0)
+        column = Gtk.TreeViewColumn("Feed", renderer, text=1)
         view.append_column(column)
-        column = Gtk.TreeViewColumn("Unread", renderer, text=1)
+        column = Gtk.TreeViewColumn("Unread", renderer, text=2)
         view.append_column(column)
 
         self.tree_view = view
@@ -103,10 +103,11 @@ class FeedListWidget(Gtk.ScrolledWindow):
 
 
 class StoriesListWidget(Gtk.TreeView):
-    def __init__(self):
+    def __init__(self, client):
         store = Gtk.ListStore(str)
         super().__init__(store)
         self.store = store
+        self.client = client
         renderer = Gtk.CellRendererText()
         column = Gtk.TreeViewColumn("Title", renderer, text=0)
         self.append_column(column)
@@ -114,8 +115,16 @@ class StoriesListWidget(Gtk.TreeView):
     def on_feed_select_changed(self, selection):
         model, treeiter = selection.get_selected()
         row = model[treeiter]
+        story_id = row[0]
+        stories = []
+        if story_id == -1:
+            pass  # TODO
+        else:
+            stories = self.client.stories(story_id)
         self.store.clear()
-        self.store.append(['Stories for ' + row[0]])
+        for story in stories['stories']:
+            text = story['story_title']
+            self.store.append([text])
 
 
 class WhatsupWindow(Gtk.Window):
@@ -129,7 +138,7 @@ class WhatsupWindow(Gtk.Window):
         d = client.feeds()
         wfeeds = FeedListWidget(d['feeds'])
         box.pack_start(wfeeds, False, True, 0)
-        wstories = StoriesListWidget()
+        wstories = StoriesListWidget(client)
         box.pack_start(wstories, True, True, 0)
 
         select = wfeeds.tree_view.get_selection()
