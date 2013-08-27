@@ -41,23 +41,23 @@ class MockClient:
     """
 
     def __init__(self):
-        self._feeds = {1: {'feed_title': 'Feed 1',
-                           'stories': [{'story_title': 'Feed 1 S1'},
-                                       {'story_title': 'Feed 1 S2'},
-                                       ]
-                           },
-                       2: {'feed_title': 'Feed 2',
-                           'stories': [{'story_title': 'Feed 1 S1'},
-                                       ]
-                           },
-                       3: {'feed_title': 'Feed 3',
-                           'stories': []
-                           },
-                       4: {'feed_title': 'Feed 4',
-                           'stories': [{'story_title': 'Feed 4 S1'},
-                                       {'story_title': 'Feed 4 S2'},
-                                       ]
-                           },
+        self._feeds = {'1': {'feed_title': 'Feed 1',
+                             'stories': [{'story_title': 'Feed 1 S1'},
+                                         {'story_title': 'Feed 1 S2'},
+                                         ]
+                             },
+                       '2': {'feed_title': 'Feed 2',
+                             'stories': [{'story_title': 'Feed 1 S1'},
+                                         ]
+                             },
+                       '3': {'feed_title': 'Feed 3',
+                             'stories': []
+                             },
+                       '4': {'feed_title': 'Feed 4',
+                             'stories': [{'story_title': 'Feed 4 S1'},
+                                         {'story_title': 'Feed 4 S2'},
+                                         ]
+                             },
                        }
 
     def feeds(self):
@@ -82,9 +82,9 @@ class MockClient:
 class FeedListWidget(Gtk.ScrolledWindow):
     def __init__(self, feeds):
         super().__init__()
-        store = Gtk.ListStore(int, str, int)
+        store = Gtk.ListStore(str, str, int)
         total_unread = sum([f['nt'] for f in feeds.values()])
-        store.append([-1, 'All', total_unread])
+        store.append(['<all>', 'All', total_unread])
         for k, f in feeds.items():
             title = f['feed_title']
             unread = f['nt']
@@ -116,8 +116,8 @@ class StoriesListWidget(Gtk.TreeView):
         model, treeiter = selection.get_selected()
         row = model[treeiter]
         story_id = row[0]
-        stories = []
-        if story_id == -1:
+        stories = {'stories': []}
+        if story_id == '<all>':
             pass  # TODO
         else:
             stories = self.client.stories(story_id)
