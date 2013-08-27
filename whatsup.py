@@ -58,22 +58,9 @@ class MockClient:
         return d
 
 
-class WhatsupWindow(Gtk.Window):
-
-    def __init__(self, client):
+class FeedListWidget(Gtk.ScrolledWindow):
+    def __init__(self, feeds):
         super().__init__()
-        self.client = client
-
-        box = Gtk.Box()
-
-        d = client.feeds()
-        box.pack_start(self.feed_list_widget(d['feeds']), False, True, 0)
-        box.pack_start(self.stories_widget(), True, True, 0)
-
-        self.add(box)
-
-    @staticmethod
-    def feed_list_widget(feeds):
         store = Gtk.ListStore(str, int)
         total_unread = sum([f['nt'] for f in feeds.values()])
         store.append(['All', total_unread])
@@ -90,18 +77,34 @@ class WhatsupWindow(Gtk.Window):
         column = Gtk.TreeViewColumn("Unread", renderer, text=1)
         view.append_column(column)
 
-        scroll = Gtk.ScrolledWindow()
-        scroll.add(view)
-        return scroll
+        self.tree_view = view
+        self.add(view)
 
-    @staticmethod
-    def stories_widget():
+
+class StoriesListWidget(Gtk.TreeView):
+    def __init__(self):
         store = Gtk.ListStore(str)
-        view = Gtk.TreeView(store)
+        super().__init__(store)
         renderer = Gtk.CellRendererText()
         column = Gtk.TreeViewColumn("Title", renderer, text=0)
-        view.append_column(column)
-        return view
+        self.append_column(column)
+
+
+class WhatsupWindow(Gtk.Window):
+
+    def __init__(self, client):
+        super().__init__()
+        self.client = client
+
+        box = Gtk.Box()
+
+        d = client.feeds()
+        wfeeds = FeedListWidget(d['feeds'])
+        box.pack_start(wfeeds, False, True, 0)
+        wstories = StoriesListWidget()
+        box.pack_start(wstories, True, True, 0)
+
+        self.add(box)
 
 
 def main():
