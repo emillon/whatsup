@@ -45,7 +45,10 @@ class NewsblurClient:
 
     def stories(self, feed):
         assert(self._cache)
-        l = [s for s in self._cache['stories'] if s['story_feed_id'] == feed]
+        l = [s
+             for s in self._cache['stories']
+             if str(s['story_feed_id']) == feed
+             ]
         return {'stories': l}
 
 
