@@ -11,6 +11,7 @@ class NewsblurClient:
     def __init__(self, api_root):
         self.api_root = api_root
         self.session = requests.Session()
+        self._cache = {}
 
     def login(self, username, password):
         url = self.api_root + '/api/login'
@@ -30,8 +31,19 @@ class NewsblurClient:
         r = self.session.get(url, data=payload)
         return r.json()
 
+    def cache_river(self, feeds):
+        river = self.river(feeds)
+        self._cache = river
+        return river
+
+    def all_stories(self):
+        assert(self._cache)
+        return self._cache
+
     def stories(self, feed):
-        return self.river([feed])
+        assert(self._cache)
+        l = [s for s in self._cache['stories'] if s['story_feed_id'] == feed]
+        return {'stories': l}
 
 
 class MockClient:
@@ -75,6 +87,15 @@ class MockClient:
                    for s in v['stories']]
         return {'stories': stories}
 
+    def cache_river(self, feeds):
+        pass
+
+    def all_stories(self):
+        stories = [s
+                   for k, v in self._feeds.items()
+                   for s in v['stories']]
+        return {'stories': stories}
+
     def stories(self, feed):
         return self.river([feed])
 
@@ -115,12 +136,12 @@ class StoriesListWidget(Gtk.TreeView):
     def on_feed_select_changed(self, selection):
         model, treeiter = selection.get_selected()
         row = model[treeiter]
-        story_id = row[0]
+        feed_id = row[0]
         stories = {'stories': []}
-        if story_id == '<all>':
-            pass  # TODO
+        if feed_id == '<all>':
+            stories = self.client.all_stories()
         else:
-            stories = self.client.stories(story_id)
+            stories = self.client.stories(feed_id)
         self.store.clear()
         for story in stories['stories']:
             text = story['story_title']
@@ -164,7 +185,7 @@ def main():
         c.login(username, password)
     d = c.feeds()
     feeds_unread = [k for k, v in d['feeds'].items() if v['nt'] > 0]
-    river = c.river(feeds_unread)
+    river = c.cache_river(feeds_unread)
     if args.debug:
         from pprint import pprint
         pprint(d)
