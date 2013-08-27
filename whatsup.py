@@ -64,8 +64,13 @@ class WhatsupWindow(Gtk.Window):
         super().__init__()
         self.client = client
 
+        box = Gtk.Box()
+
         d = client.feeds()
-        self.add(self.feed_list_widget(d['feeds']))
+        box.pack_start(self.feed_list_widget(d['feeds']), False, True, 0)
+        box.pack_start(self.stories_widget(), True, True, 0)
+
+        self.add(box)
 
     @staticmethod
     def feed_list_widget(feeds):
@@ -88,6 +93,15 @@ class WhatsupWindow(Gtk.Window):
         scroll = Gtk.ScrolledWindow()
         scroll.add(view)
         return scroll
+
+    @staticmethod
+    def stories_widget():
+        store = Gtk.ListStore(str)
+        view = Gtk.TreeView(store)
+        renderer = Gtk.CellRendererText()
+        column = Gtk.TreeViewColumn("Title", renderer, text=0)
+        view.append_column(column)
+        return view
 
 
 def main():
