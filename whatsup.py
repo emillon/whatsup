@@ -36,22 +36,34 @@ class MockClient:
     A client that is compatible with NewsblurClient, but
     does not connect to the Internet.
     """
-    def feeds(self):
-        d = {'feeds': {1: {'feed_title': 'Feed 1',
-                           'nt': 2,
+
+    def __init__(self):
+        self._feeds = {1: {'feed_title': 'Feed 1',
+                           'stories': [{'story_title': 'Feed 1 S1'},
+                                       {'story_title': 'Feed 1 S2'},
+                                       ]
                            },
                        2: {'feed_title': 'Feed 2',
-                           'nt': 1,
+                           'stories': [{'story_title': 'Feed 1 S1'},
+                                       ]
                            },
                        3: {'feed_title': 'Feed 3',
-                           'nt': 0,
+                           'stories': []
                            },
                        4: {'feed_title': 'Feed 4',
-                           'nt': 2,
+                           'stories': [{'story_title': 'Feed 4 S1'},
+                                       {'story_title': 'Feed 4 S2'},
+                                       ]
                            },
                        }
-             }
-        return d
+
+    def feeds(self):
+        return {'feeds': {k: {'feed_title': v['feed_title'],
+                              'nt': len(v['stories'])
+                              }
+                          for k, v in self._feeds.items()
+                          }
+                }
 
     def river(self, feeds):
         d = {}
