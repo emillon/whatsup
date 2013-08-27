@@ -64,12 +64,15 @@ class WhatsupWindow(Gtk.Window):
         super().__init__()
         self.client = client
 
-        store = Gtk.ListStore(str, int)
         d = client.feeds()
+        self.add(self.feed_list_widget(d['feeds']))
 
-        total_unread = sum([f['nt'] for f in d['feeds'].values()])
+    @staticmethod
+    def feed_list_widget(feeds):
+        store = Gtk.ListStore(str, int)
+        total_unread = sum([f['nt'] for f in feeds.values()])
         store.append(['All', total_unread])
-        for f in d['feeds'].values():
+        for f in feeds.values():
             title = f['feed_title']
             unread = f['nt']
             row = [title, unread]
@@ -84,8 +87,7 @@ class WhatsupWindow(Gtk.Window):
 
         scroll = Gtk.ScrolledWindow()
         scroll.add(view)
-
-        self.add(scroll)
+        return scroll
 
 
 def main():
