@@ -85,9 +85,16 @@ class StoriesListWidget(Gtk.TreeView):
     def __init__(self):
         store = Gtk.ListStore(str)
         super().__init__(store)
+        self.store = store
         renderer = Gtk.CellRendererText()
         column = Gtk.TreeViewColumn("Title", renderer, text=0)
         self.append_column(column)
+
+    def on_feed_select_changed(self, selection):
+        model, treeiter = selection.get_selected()
+        row = model[treeiter]
+        self.store.clear()
+        self.store.append(['Stories for ' + row[0]])
 
 
 class WhatsupWindow(Gtk.Window):
@@ -103,6 +110,9 @@ class WhatsupWindow(Gtk.Window):
         box.pack_start(wfeeds, False, True, 0)
         wstories = StoriesListWidget()
         box.pack_start(wstories, True, True, 0)
+
+        select = wfeeds.tree_view.get_selection()
+        select.connect('changed', wstories.on_feed_select_changed)
 
         self.add(box)
 
