@@ -51,6 +51,17 @@ class StoriesListWidget(Gtk.TreeView):
             self.store.append([text])
 
 
+class StoryContentWidget(Gtk.TextView):
+    def on_story_select_changed(self, selection):
+        model, treeiter = selection.get_selected()
+        if treeiter is None:
+            return
+        row = model[treeiter]
+        text = 'Content for ' + row[0]
+        buf = self.get_buffer()
+        buf.set_text(text)
+
+
 class WhatsupWindow(Gtk.Window):
 
     def __init__(self, client):
@@ -62,10 +73,21 @@ class WhatsupWindow(Gtk.Window):
         d = client.feeds()
         wfeeds = FeedListWidget(d['feeds'])
         box.pack_start(wfeeds, True, True, 0)
+
+        vbox = Gtk.Box()
+        vbox.set_property('orientation', Gtk.Orientation.VERTICAL)
+
         wstories = StoriesListWidget(client)
-        box.pack_start(wstories, True, True, 0)
+        vbox.pack_start(wstories, True, True, 0)
+        wcontent = StoryContentWidget()
+        vbox.pack_start(wcontent, True, True, 0)
+
+        box.pack_start(vbox, True, True, 0)
 
         select = wfeeds.tree_view.get_selection()
         select.connect('changed', wstories.on_feed_select_changed)
+
+        select_story = wstories.get_selection()
+        select_story.connect('changed', wcontent.on_story_select_changed)
 
         self.add(box)
